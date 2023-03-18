@@ -10,4 +10,12 @@ public class MainController {
     public String hello(){
         return "Hello World!";
     }
+    @GetMapping("/")
+    public String main(){
+        return "main";
+    }
+    @GetMapping("/loginFail")
+    public String fail(){
+        return "fail";
+    }
 }

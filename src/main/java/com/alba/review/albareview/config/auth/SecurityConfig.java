@@ -28,7 +28,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .oauth2Login()
                 .userInfoEndpoint().userService(customOauth2UserService) //로그인 성공시 진행되어야 하는 서비스 -> DB 에 값 저장
                 .and()
-                .defaultSuccessUrl("/test"); //인증된 사용자가 이동할 곳
+                .successHandler(new CustomOauth2SuccessHandler());
+                //.defaultSuccessUrl("/auth/member"); //인증된 사용자가 이동할 곳 --> 회원 정보 입력 화면 및 api
 
     }
 }

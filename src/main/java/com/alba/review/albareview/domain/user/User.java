@@ -27,12 +27,29 @@ public class User {
     @Column(nullable = false)
     private Role role;
 
+    @Enumerated(EnumType.STRING)
+    @Column
+    private Sex sex;
+
+    @Column
+    private String address;
+
+    @Column
+    private String phoneNumber;
+
+    @Column
+    private int age;
+
     @Builder
-    public User(String name, String email, String picture, Role role){
+    public User(String name, String email, String picture, Role role, Sex sex, String address, String phoneNumber, int age){
         this.name = name;
         this.email = email;
         this.picture = picture;
         this.role = role;
+        this.sex = sex;
+        this.address = address;
+        this.phoneNumber = phoneNumber;
+        this.age = age;
     }
     public User update(String name, String picture) {
         this.name = name;

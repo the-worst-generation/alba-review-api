@@ -4,6 +4,7 @@ import com.alba.review.albareview.config.auth.dto.OAuthAttributes;
 import com.alba.review.albareview.config.auth.dto.SessionUser;
 import com.alba.review.albareview.domain.user.User;
 import com.alba.review.albareview.domain.user.UserRepository;
+import com.alba.review.albareview.domain.user.dto.SignInRequestDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
@@ -29,12 +30,11 @@ public class CustomOauth2UserService implements OAuth2UserService<OAuth2UserRequ
         OAuth2UserService<OAuth2UserRequest, OAuth2User> delegate = new DefaultOAuth2UserService();
         OAuth2User oAuth2User = delegate.loadUser(userRequest);
 
-        String registerId = userRequest.getClientRegistration().getRegistrationId();
+        String registerId = userRequest.getClientRegistration().getRegistrationId(); //현재 로그인 중인 서비스를 구분하는 코드
         String userNameAttributeName = userRequest.getClientRegistration().getProviderDetails().getUserInfoEndpoint()
-                .getUserNameAttributeName();
+                .getUserNameAttributeName(); //Oauth2 진행시에 키가 되는 필드값
 
-        OAuthAttributes attributes = OAuthAttributes.of(registerId, userNameAttributeName, oAuth2User.getAttributes());
-
+        OAuthAttributes attributes = OAuthAttributes.of(registerId, userNameAttributeName, oAuth2User.getAttributes()); //Oauth2User의 attribute를 담음
         User user = saveOrUpdate(attributes);
 
         httpSession.setAttribute("user", new SessionUser(user));

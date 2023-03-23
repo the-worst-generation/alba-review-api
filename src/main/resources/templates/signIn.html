@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org" xmlns="http://www.w3.org/1999/html">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+</head>
+<body>
+성별<input id="sex"></input>
+주소<input id="address"></input>
+휴대폰번호<input id="phoneNumber"></input>
+나이<input id="age"></input>
+<button onclick="onClick()">전송</button>
+</body>
+<script type="text/javascript">
+    function onClick(){
+        var data = {
+            sex: $('#sex').val(),
+            address: $('#address').val(),
+            phoneNumber: $('#phoneNumber').val(),
+            age: $('#age').val()
+        };
+        console.log(data);
+        $.ajax({
+            contentType: "application/json",
+            type:"POST",
+            url: "/auth/member",
+            data: JSON.stringify(data),
+            method: "POST",
+            dataType: "json",
+            success: function(data){
+                alert(data);
+            }
+        });
+    }
+</script>
+</html>

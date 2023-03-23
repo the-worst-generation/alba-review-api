@@ -51,12 +51,19 @@ public class User {
         this.phoneNumber = phoneNumber;
         this.age = age;
     }
+
     public User update(String name, String picture) {
         this.name = name;
         this.picture = picture;
         return this;
     }
-
+    public User signIn(Sex sex, String address, String phoneNumber, int age){
+        this.sex = sex;
+        this.address = address;
+        this.phoneNumber = phoneNumber;
+        this.age = age;
+        return this;
+    }
     public String getRoleKey(){
         return this.role.getKey();
     }

@@ -6,7 +6,10 @@ import com.alba.review.albareview.domain.user.User;
 import com.alba.review.albareview.domain.user.UserRepository;
 import com.alba.review.albareview.domain.user.dto.SignInRequestDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -17,13 +20,15 @@ import org.springframework.stereotype.Service;
 
 import javax.servlet.http.HttpSession;
 import java.util.Collections;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 @RequiredArgsConstructor
 @Service
-//구글 로그인을 통해 가져온 사용자의 정보를 기반으로 가입 및 정보 수정, 세션 저장 등의 기능 사용
+//구글 로그인을 통해 가져온 사용자의 정보를 기반으로 가입 및 정보 수정
 public class CustomOauth2UserService implements OAuth2UserService<OAuth2UserRequest, OAuth2User> {
     private final UserRepository userRepository;
-    private final HttpSession httpSession;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -37,19 +42,32 @@ public class CustomOauth2UserService implements OAuth2UserService<OAuth2UserRequ
         OAuthAttributes attributes = OAuthAttributes.of(registerId, userNameAttributeName, oAuth2User.getAttributes()); //Oauth2User의 attribute를 담음
         User user = saveOrUpdate(attributes);
 
-        httpSession.setAttribute("user", new SessionUser(user));
-
         return new DefaultOAuth2User(Collections.singleton(new SimpleGrantedAuthority(user.getRoleKey())),
                 attributes.getAttributes(),
                 attributes.getNameAttributeKey());
-        
+
+    }
+    public String signIn(SignInRequestDto signInRequestDto){
+        DefaultOAuth2User oAuth2User = (DefaultOAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Optional<User> user = userRepository.findByEmail((String) oAuth2User.getAttributes().get("email"));
+        if(user.isPresent()){
+            user.get().signIn(signInRequestDto.getSex(),
+                    signInRequestDto.getAddress(),
+                    signInRequestDto.getPhoneNumber(),
+                    signInRequestDto.getAge());
+            userRepository.save(user.get());
+        }
+        return "";
     }
 
     private User saveOrUpdate(OAuthAttributes attributes) {
         User user = userRepository.findByEmail(attributes.getEmail())
-                .map(entity -> entity.update(attributes.getName(), attributes.getPicture()))
+                .map(entity -> entity.update(
+                        attributes.getName(), attributes.getPicture()))
                 .orElse(attributes.toEntity());
 
         return userRepository.save(user);
     }
+
+
 }

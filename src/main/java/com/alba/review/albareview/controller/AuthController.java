@@ -1,23 +1,26 @@
 package com.alba.review.albareview.controller;
 
 import com.alba.review.albareview.config.auth.CustomOauth2UserService;
-import com.alba.review.albareview.domain.user.dto.SignInRequestDto;
+import com.alba.review.albareview.domain.user.dto.SignInRequestDTO;
+import com.alba.review.albareview.domain.user.dto.UserResponseDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.user.OAuth2User;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
-
-import java.util.Map;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
     private final CustomOauth2UserService customOauth2UserService;
+
+    @GetMapping("/auth/member")
+    public ResponseEntity<UserResponseDTO> getUser(@RequestParam long id){
+        return customOauth2UserService.getUser(id);
+
+    }
     @PostMapping("/auth/member")
-    public String signIn(@RequestBody SignInRequestDto dto){
+    public ResponseEntity<Long> signIn(@RequestBody SignInRequestDTO dto){
         return customOauth2UserService.signIn(dto);
     }
+
+
 }

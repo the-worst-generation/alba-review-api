@@ -12,7 +12,7 @@ import javax.persistence.*;
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private long id;
 
     @Column(nullable = false)
     private String name;
@@ -52,12 +52,16 @@ public class User {
         this.age = age;
     }
 
-    public User update(String name, String picture) {
+    public User update(String name, String picture, Sex sex, String address, String phoneNumber, int age) {
         this.name = name;
         this.picture = picture;
+        this.sex = sex;
+        this.address = address;
+        this.phoneNumber = phoneNumber;
+        this.age = age;
         return this;
     }
-    public User signIn(Sex sex, String address, String phoneNumber, int age){
+    public User signInCustom(Sex sex, String address, String phoneNumber, int age){
         this.sex = sex;
         this.address = address;
         this.phoneNumber = phoneNumber;
@@ -66,5 +70,11 @@ public class User {
     }
     public String getRoleKey(){
         return this.role.getKey();
+    }
+
+    public User signInAuth(String name, String picture) {
+        this.name = name;
+        this.picture = picture;
+        return this;
     }
 }

@@ -2,7 +2,6 @@ package com.alba.review.albareview.domain.user.dto;
 
 import com.alba.review.albareview.domain.user.Sex;
 import com.alba.review.albareview.domain.user.User;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -11,7 +10,7 @@ import javax.validation.constraints.Pattern;
 
 @Getter
 @NoArgsConstructor
-public class SignInRequestDto {
+public class SignInRequestDTO {
     private Sex sex;
     private String address;
     @Pattern(regexp = "^\\d{2,3}-\\d{3,4}-\\d{4}$",message = "핸드폰 번호의 양식과 맞지 않습니다. 01x-xxx(x)-xxxx")
@@ -19,7 +18,7 @@ public class SignInRequestDto {
     private int age;
 
     @Builder
-    public SignInRequestDto(Sex sex, String address, String phoneNumber, int age){
+    public SignInRequestDTO(Sex sex, String address, String phoneNumber, int age){
         this.sex = sex;
         this.address = address;
         this.phoneNumber = phoneNumber;

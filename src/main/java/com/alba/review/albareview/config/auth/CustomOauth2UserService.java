@@ -1,15 +1,14 @@
 package com.alba.review.albareview.config.auth;
 
 import com.alba.review.albareview.config.auth.dto.OAuthAttributes;
-import com.alba.review.albareview.config.auth.dto.SessionUser;
 import com.alba.review.albareview.domain.user.User;
 import com.alba.review.albareview.domain.user.UserRepository;
-import com.alba.review.albareview.domain.user.dto.SignInRequestDto;
+import com.alba.review.albareview.domain.user.dto.SignInRequestDTO;
+import com.alba.review.albareview.domain.user.dto.UserResponseDTO;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
@@ -18,10 +17,7 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import javax.servlet.http.HttpSession;
 import java.util.Collections;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -47,22 +43,22 @@ public class CustomOauth2UserService implements OAuth2UserService<OAuth2UserRequ
                 attributes.getNameAttributeKey());
 
     }
-    public String signIn(SignInRequestDto signInRequestDto){
+    public ResponseEntity<Long> signIn(SignInRequestDTO signInRequestDto){
         DefaultOAuth2User oAuth2User = (DefaultOAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Optional<User> user = userRepository.findByEmail((String) oAuth2User.getAttributes().get("email"));
         if(user.isPresent()){
-            user.get().signIn(signInRequestDto.getSex(),
+            user.get().signInCustom(signInRequestDto.getSex(),
                     signInRequestDto.getAddress(),
                     signInRequestDto.getPhoneNumber(),
                     signInRequestDto.getAge());
-            userRepository.save(user.get());
+            return ResponseEntity.ok().body(userRepository.save(user.get()).getId());
         }
-        return "";
+        return ResponseEntity.badRequest().build();
     }
 
     private User saveOrUpdate(OAuthAttributes attributes) {
         User user = userRepository.findByEmail(attributes.getEmail())
-                .map(entity -> entity.update(
+                .map(entity -> entity.signInAuth(
                         attributes.getName(), attributes.getPicture()))
                 .orElse(attributes.toEntity());
 
@@ -70,4 +66,20 @@ public class CustomOauth2UserService implements OAuth2UserService<OAuth2UserRequ
     }
 
 
+    public ResponseEntity<UserResponseDTO> getUser(long id) {
+        if(!userRepository.existsById(id)){
+            return ResponseEntity.badRequest().build();
+        }
+        User user = userRepository.findById(id).get();
+        return ResponseEntity.ok().body(UserResponseDTO.builder()
+                .name(user.getName())
+                .age(user.getAge())
+                .sex(user.getSex())
+                .email(user.getEmail())
+                .phoneNumber(user.getPhoneNumber())
+                .role(user.getRoleKey())
+                .picture(user.getPicture())
+                .address(user.getAddress())
+                .build());
+    }
 }

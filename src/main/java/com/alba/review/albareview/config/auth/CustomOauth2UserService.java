@@ -18,6 +18,7 @@ import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Optional;
 
 @RequiredArgsConstructor
@@ -46,11 +47,11 @@ public class CustomOauth2UserService implements OAuth2UserService<OAuth2UserRequ
     public ResponseEntity<Long> signIn(SignInRequestDTO signInRequestDto){
         DefaultOAuth2User oAuth2User = (DefaultOAuth2User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Optional<User> user = userRepository.findByEmail((String) oAuth2User.getAttributes().get("email"));
-        if(user.isPresent()){
+        if(user.isPresent() && !userRepository.existsByNickname(signInRequestDto.getNickname())){
             user.get().signInCustom(signInRequestDto.getSex(),
-                    signInRequestDto.getAddress(),
-                    signInRequestDto.getPhoneNumber(),
-                    signInRequestDto.getAge());
+                    signInRequestDto.getNickname(),
+                    signInRequestDto.getBirthDate()
+                    );
             return ResponseEntity.ok().body(userRepository.save(user.get()).getId());
         }
         return ResponseEntity.badRequest().build();
@@ -59,7 +60,7 @@ public class CustomOauth2UserService implements OAuth2UserService<OAuth2UserRequ
     private User saveOrUpdate(OAuthAttributes attributes) {
         User user = userRepository.findByEmail(attributes.getEmail())
                 .map(entity -> entity.signInAuth(
-                        attributes.getName(), attributes.getPicture()))
+                        attributes.getName(), attributes.getProfilePicture()))
                 .orElse(attributes.toEntity());
 
         return userRepository.save(user);
@@ -73,13 +74,21 @@ public class CustomOauth2UserService implements OAuth2UserService<OAuth2UserRequ
         User user = userRepository.findById(id).get();
         return ResponseEntity.ok().body(UserResponseDTO.builder()
                 .name(user.getName())
-                .age(user.getAge())
-                .sex(user.getSex())
-                .email(user.getEmail())
-                .phoneNumber(user.getPhoneNumber())
-                .role(user.getRoleKey())
-                .picture(user.getPicture())
-                .address(user.getAddress())
+                        .email(user.getEmail())
+                        .profilePicture((user.getProfilePicture()))
+                        .nickname(user.getNickname())
+                        .sex(user.getSex())
+                        .birthDate(user.getBirthDate())
                 .build());
+    }
+
+    public ResponseEntity<HashMap> checkDuplicateNickname(String nickname) {
+        HashMap map = new HashMap();
+        if(userRepository.existsByNickname(nickname)) {
+            map.put("error", nickname + "은 존재하는 닉네임입니다.");
+            return ResponseEntity.badRequest().body(map);
+        }
+        map.put("success", nickname+ "은 사용 가능한 닉네임입니다.");
+        return ResponseEntity.ok().body(map);
     }
 }

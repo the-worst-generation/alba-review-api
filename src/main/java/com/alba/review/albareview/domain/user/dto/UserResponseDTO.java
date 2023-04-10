@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import javax.management.relation.Role;
+import java.time.LocalDate;
 
 @Getter
 @AllArgsConstructor
@@ -13,10 +14,9 @@ import javax.management.relation.Role;
 public class UserResponseDTO {
     private String name;
     private String email;
-    private String picture;
+    private String profilePicture;
     private String role;
     private Sex sex;
-    private String address;
-    private String phoneNumber;
-    private int age;
+    private String nickname;
+    private LocalDate birthDate;
 }

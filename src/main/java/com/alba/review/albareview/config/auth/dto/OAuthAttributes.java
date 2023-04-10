@@ -13,15 +13,15 @@ public class OAuthAttributes {
     private String nameAttributeKey;
     private String email;
     private String name;
-    private String picture;
+    private String profilePicture;
 
     @Builder
-    public OAuthAttributes(Map<String, Object> attributes, String nameAttributeKey, String email, String name, String picture){
+    public OAuthAttributes(Map<String, Object> attributes, String nameAttributeKey, String email, String name, String profilePicture){
         this.attributes = attributes;
         this.nameAttributeKey = nameAttributeKey;
         this.email = email;
         this.name = name;
-        this.picture = picture;
+        this.profilePicture = profilePicture;
     }
 
 
@@ -35,7 +35,7 @@ public class OAuthAttributes {
         Map<String, Object> response = (Map<String, Object>) attributes.get("response");
         return OAuthAttributes.builder()
                 .name((String) response.get("name"))
-                .picture((String) response.get("picture"))
+                .profilePicture((String) response.get("profile_image"))
                 .email((String) response.get("email"))
                 .attributes(response)
                 .nameAttributeKey(userNameAttributeName)
@@ -46,7 +46,7 @@ public class OAuthAttributes {
         return OAuthAttributes.builder()
                 .name((String) attributes.get("name"))
                 .email((String) attributes.get("email"))
-                .picture((String) attributes.get("picture"))
+                .profilePicture((String) attributes.get("picture"))
                 .attributes(attributes)
                 .nameAttributeKey(userNameAttributeName)
                 .build();
@@ -56,7 +56,7 @@ public class OAuthAttributes {
         return User.builder()
                 .name(name)
                 .email(email)
-                .picture(picture)
+                .profilePicture(profilePicture)
                 .role(Role.USER)
                 .build();
     }

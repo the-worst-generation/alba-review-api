@@ -1,6 +1,5 @@
 package com.alba.review.albareview.domain.user;
 
-import jdk.vm.ci.meta.Local;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -25,7 +24,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(nullable = false, name = "name")
+    @Column(name = "name")
     private String name;
 
     @Column(nullable = false, name = "email")
@@ -34,9 +33,9 @@ public class User {
     @Column(nullable = false, name = "profile_picture")
     private String profilePicture;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name = "role")
-    private Role role;
+//    @Enumerated(EnumType.STRING)
+//    @Column(nullable = false, name = "role")
+//    private Role role;
 
     @Column(name = "nickname")
     private String nickname;
@@ -48,11 +47,22 @@ public class User {
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "social_type")
+    private SocialType socialType;
+
     @CreatedDate
     private LocalDateTime createDate;
 
     @LastModifiedDate
     private LocalDateTime modifiedDate;
+
+    public User toEntity(){
+        return User.builder()
+                .email(email)
+                .profilePicture(profilePicture)
+                .build();
+    }
 
     public User update(String nickname, String profilePicture, Sex sex, LocalDate birthDate) {
         this.nickname = nickname;
@@ -67,9 +77,9 @@ public class User {
         this.birthDate = birthDate;
         return this;
     }
-    public String getRoleKey(){
-        return this.role.getKey();
-    }
+//    public String getRoleKey(){
+//        return this.role.getKey();
+//    }
 
     public User signInAuth(String name, String profilePicture) {
         this.name = name;

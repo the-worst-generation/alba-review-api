@@ -1,37 +1,29 @@
 package com.alba.review.albareview.controller;
 
-import com.alba.review.albareview.config.auth.CustomOauth2UserService;
+import com.alba.review.albareview.config.auth.AuthService;
 import com.alba.review.albareview.domain.user.dto.SignInRequestDTO;
 import com.alba.review.albareview.domain.user.dto.UserResponseDTO;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
-    private final CustomOauth2UserService customOauth2UserService;
+    private final AuthService authService;
 
-    //회원 정보 조회
-    @GetMapping("/auth/member")
-    public ResponseEntity<UserResponseDTO> getUser(@RequestParam long id){
-        return customOauth2UserService.getUser(id);
-
+    @PostMapping("/oauth/kakao/accessToken")
+    public String getAccessTokenByCode(@RequestBody Map<String, String> codeMap) throws IOException {
+        return authService.getKakaoToken(codeMap.get("code"));
     }
 
-    //회원 닉네임 중복인지 확인
-    @GetMapping("/auth/nickname/{nickname}/duplicate")
-    public ResponseEntity<HashMap> checkDuplicateNickname(@PathVariable String nickname){
-        return customOauth2UserService.checkDuplicateNickname(nickname);
+    @GetMapping("/oauth/test")
+    public String test(){
+        return "test";
     }
-    //http://localhost:8080/oauth2/authorization/naver -> 네이버
-    //http://localhost:8080/oauth2/authorization/google -> 구글
-    @PostMapping("/auth/member")
-    public ResponseEntity<Long> signIn(@RequestBody SignInRequestDTO dto){
-        return customOauth2UserService.signIn(dto);
-    }
-
-
 }

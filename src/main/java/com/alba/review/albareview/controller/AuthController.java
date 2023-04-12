@@ -17,6 +17,7 @@ import java.util.Map;
 public class AuthController {
     private final AuthService authService;
 
+    //인가코드 받기
     @PostMapping("/oauth/kakao/accessToken")
     public String getAccessTokenByCode(@RequestBody Map<String, String> codeMap) throws IOException {
         return authService.getKakaoToken(codeMap.get("code"));

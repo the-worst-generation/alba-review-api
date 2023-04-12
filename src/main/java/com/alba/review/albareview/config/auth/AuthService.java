@@ -1,12 +1,10 @@
 package com.alba.review.albareview.config.auth;
 
-import com.alba.review.albareview.AuthInfo;
 import com.alba.review.albareview.constants.Constants;
 import com.alba.review.albareview.domain.user.*;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -17,6 +15,7 @@ import java.net.URL;
 @Service
 public class AuthService {
     private final UserRepository userRepository;
+    private final Constants constants;
 
     public String getKakaoToken(String code) throws IOException{ //인가 코드 받아서 token 받아옴
         String access_Token = "";
@@ -35,8 +34,8 @@ public class AuthService {
             BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(conn.getOutputStream()));
             StringBuilder sb = new StringBuilder();
             sb.append("grant_type=authorization_code");
-            sb.append("&client_id="+ "81015fa1bb29bfdaacecbb0525ba6734"); // REST_API_KEY 입력
-            sb.append("&redirect_uri=" + "http://localhost:8080/oauth/test"); // 인가코드 받은 redirect_uri 입력
+            sb.append("&client_id="+ constants.getClientId()); // REST_API_KEY 입력
+            sb.append("&redirect_uri=" + constants.getRedirectUri()); // 인가코드 받은 redirect_uri 입력
             sb.append("&code=" + code);
             bw.write(sb.toString());
             bw.flush();
@@ -106,9 +105,6 @@ public class AuthService {
             //Gson 라이브러리로 JSON파싱
             JsonElement element = JsonParser.parseString(result);
 
-            // TODO : 가져온 정보로 회원가입 진행 로직 구현
-            int id = element.getAsJsonObject().get("id").getAsInt();
-
             String email = String.valueOf(element.getAsJsonObject().get("kakao_account").getAsJsonObject().get("email"));
             String profilePicture = String.valueOf(element.getAsJsonObject().get("properties").getAsJsonObject().get("profile_image"));
 
@@ -120,7 +116,7 @@ public class AuthService {
                 User user = User.builder()
                         .email(email)
                         .profilePicture(profilePicture)
-                        .socialType(SocialType.KAKAO) //enum으로 바꾸기
+                        .socialType(SocialType.KAKAO)
                         .build();
                 userRepository.save(user);
             }

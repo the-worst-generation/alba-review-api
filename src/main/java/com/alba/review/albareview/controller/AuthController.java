@@ -22,6 +22,11 @@ public class AuthController {
     public String getAccessTokenByCode(@RequestBody Map<String, String> codeMap) throws IOException {
         return authService.getKakaoToken(codeMap.get("code"));
     }
+    @PostMapping("/signIn")
+    public ResponseEntity<Long> signIn(@RequestBody SignInRequestDTO signInRequestDTO){
+        return authService.signIn(signInRequestDTO);
+    }
+
 
     @GetMapping("/oauth/test")
     public String test(){

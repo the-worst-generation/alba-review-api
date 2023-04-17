@@ -24,9 +24,6 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
 
-    @Column(name = "name")
-    private String name;
-
     @Column(nullable = false, name = "email")
     private String email;
 
@@ -57,33 +54,5 @@ public class User {
     @LastModifiedDate
     private LocalDateTime modifiedDate;
 
-    public User toEntity(){
-        return User.builder()
-                .email(email)
-                .profilePicture(profilePicture)
-                .build();
-    }
 
-    public User update(String nickname, String profilePicture, Sex sex, LocalDate birthDate) {
-        this.nickname = nickname;
-        this.profilePicture = profilePicture;
-        this.sex = sex;
-        this.birthDate = birthDate;
-        return this;
-    }
-    public User signInCustom(Sex sex, String nickname, LocalDate birthDate){
-        this.sex = sex;
-        this.nickname = nickname;
-        this.birthDate = birthDate;
-        return this;
-    }
-//    public String getRoleKey(){
-//        return this.role.getKey();
-//    }
-
-    public User signInAuth(String name, String profilePicture) {
-        this.name = name;
-        this.profilePicture = profilePicture;
-        return this;
-    }
 }

@@ -2,9 +2,11 @@ package com.alba.review.albareview.config.auth;
 
 import com.alba.review.albareview.constants.Constants;
 import com.alba.review.albareview.domain.user.*;
+import com.alba.review.albareview.domain.user.dto.SignInRequestDTO;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -44,27 +46,16 @@ public class AuthService {
             int responseCode = conn.getResponseCode();
             System.out.println("responseCode : " + responseCode);
             System.out.println(sb);
-            //요청을 통해 얻은 JSON타입의 Response 메세지 읽어오기
-            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String line = "";
-            String result = "";
 
-            while ((line = br.readLine()) != null) {
-                result += line;
-            }
-
-            System.out.println("response body : " + result);
 
             //Gson 라이브러리에 포함된 클래스로 JSON파싱 객체 생성
-            JsonElement element = JsonParser.parseString(result);
-
+            JsonElement element = getJsonElement(conn);
             access_Token = element.getAsJsonObject().get("access_token").getAsString();
             refresh_Token = element.getAsJsonObject().get("refresh_token").getAsString();
 
             System.out.println("access_token : " + access_Token);
             System.out.println("refresh_token : " + refresh_Token);
 
-            br.close();
             bw.close();
             createKakaoUser(access_Token);
 
@@ -91,19 +82,7 @@ public class AuthService {
             int responseCode = conn.getResponseCode();
             System.out.println("responseCode : " + responseCode);
 
-            //요청을 통해 얻은 JSON타입의 Response 메세지 읽어오기
-            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-            String line = "";
-            String result = "";
-
-            while ((line = br.readLine()) != null) {
-                result += line;
-            }
-
-            System.out.println("response body : " + result);
-
-            //Gson 라이브러리로 JSON파싱
-            JsonElement element = JsonParser.parseString(result);
+            JsonElement element = getJsonElement(conn);
 
             String email = String.valueOf(element.getAsJsonObject().get("kakao_account").getAsJsonObject().get("email"));
             String profilePicture = String.valueOf(element.getAsJsonObject().get("properties").getAsJsonObject().get("profile_image"));
@@ -125,4 +104,21 @@ public class AuthService {
         }
     }
 
+    private JsonElement getJsonElement(HttpURLConnection conn) throws IOException {
+        BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+        String line = "";
+        String result = "";
+
+        while ((line = br.readLine()) != null) {
+            result += line;
+        }
+        System.out.println("response body : " + result);
+        br.close();
+        return JsonParser.parseString(result);
+    }
+
+    public ResponseEntity<Long> signIn(SignInRequestDTO signInRequestDTO) {
+        //닉네임, 이메일 중복있는지 확인한 후에 현재 로그인 중인 User 찾아서 정보 기입
+        return ResponseEntity.ok().body(0L);
+    }
 }

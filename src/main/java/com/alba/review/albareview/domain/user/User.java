@@ -30,9 +30,9 @@ public class User {
     @Column(nullable = false, name = "profile_picture")
     private String profilePicture;
 
-//    @Enumerated(EnumType.STRING)
-//    @Column(nullable = false, name = "role")
-//    private Role role;
+    //@Enumerated(EnumType.STRING)
+    @Column(nullable = false, name = "role")
+    private String role;
 
     @Column(name = "nickname")
     private String nickname;

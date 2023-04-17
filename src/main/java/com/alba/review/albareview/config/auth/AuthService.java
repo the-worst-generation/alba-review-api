@@ -7,11 +7,15 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.List;
 
 @RequiredArgsConstructor
 @Service
@@ -58,6 +62,11 @@ public class AuthService {
 
             bw.close();
             createKakaoUser(access_Token);
+//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+//            String username = authentication.getName(); // 사용자 이름 가져오기
+//            List<GrantedAuthority> authorities = (List<GrantedAuthority>) authentication.getAuthorities(); // 사용자 권한 목록 가져오기
+//            System.out.println("TEST : " + authorities);
+//            System.out.println("TEST2: "+username);
 
         }catch (IOException e) {
             e.printStackTrace();
@@ -96,6 +105,7 @@ public class AuthService {
                         .email(email)
                         .profilePicture(profilePicture)
                         .socialType(SocialType.KAKAO)
+                        .role(Role.USER.getGrantedAuthority())
                         .build();
                 userRepository.save(user);
             }
@@ -106,7 +116,7 @@ public class AuthService {
 
     private JsonElement getJsonElement(HttpURLConnection conn) throws IOException {
         BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        String line = "";
+        String line;
         String result = "";
 
         while ((line = br.readLine()) != null) {

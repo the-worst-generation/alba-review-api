@@ -1,11 +1,13 @@
 package com.alba.review.albareview.config.auth;
 
+import com.alba.review.albareview.config.auth.DTO.KakaoUserInfoDto;
+import com.alba.review.albareview.config.auth.DTO.LoginResponseDto;
 import com.alba.review.albareview.constants.Constants;
 import com.alba.review.albareview.domain.user.*;
-import com.alba.review.albareview.domain.user.dto.SignInRequestDTO;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.java.Log;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -23,7 +25,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final Constants constants;
 
-    public String getKakaoToken(String code) throws IOException{ //인가 코드 받아서 token 받아옴
+    public ResponseEntity<String> getKakaoToken(String code) throws IOException{ //인가 코드 받아서 token 받아옴
         String access_Token = "";
         String refresh_Token = "";
         String reqURL = "https://kauth.kakao.com/oauth/token";
@@ -48,6 +50,9 @@ public class AuthService {
 
             //결과 코드가 200이라면 성공
             int responseCode = conn.getResponseCode();
+            if(responseCode != 200){
+                return ResponseEntity.badRequest().body("잘못된 요청입니다.");
+            }
             System.out.println("responseCode : " + responseCode);
             System.out.println(sb);
 
@@ -61,23 +66,17 @@ public class AuthService {
             System.out.println("refresh_token : " + refresh_Token);
 
             bw.close();
-            createKakaoUser(access_Token);
-//            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-//            String username = authentication.getName(); // 사용자 이름 가져오기
-//            List<GrantedAuthority> authorities = (List<GrantedAuthority>) authentication.getAuthorities(); // 사용자 권한 목록 가져오기
-//            System.out.println("TEST : " + authorities);
-//            System.out.println("TEST2: "+username);
 
         }catch (IOException e) {
             e.printStackTrace();
         }
 
-        return access_Token;
+        return ResponseEntity.ok().body(access_Token);
     }
-    public void createKakaoUser(String token) { // -->  토큰으로 회원가입 진행
+    public ResponseEntity<KakaoUserInfoDto> getKakaoUserInfo(String token) { // -->  토큰으로 회원 정보 가져오기
 
         String reqURL = "https://kapi.kakao.com/v2/user/me";
-
+        KakaoUserInfoDto userInfoDto = null;
         //access_token을 이용하여 사용자 정보 조회
         try {
             URL url = new URL(reqURL);
@@ -96,22 +95,14 @@ public class AuthService {
             String email = String.valueOf(element.getAsJsonObject().get("kakao_account").getAsJsonObject().get("email"));
             String profilePicture = String.valueOf(element.getAsJsonObject().get("properties").getAsJsonObject().get("profile_image"));
 
-            if(userRepository.existsByEmail(email)){
-                System.out.println("이미 있는 유저임.");
-                //처리 해야함
-            }
-            else{
-                User user = User.builder()
-                        .email(email)
-                        .profilePicture(profilePicture)
-                        .socialType(SocialType.KAKAO)
-                        .role(Role.USER.getGrantedAuthority())
-                        .build();
-                userRepository.save(user);
-            }
+            userInfoDto = new KakaoUserInfoDto(email, profilePicture);
         } catch (IOException e) {
             e.printStackTrace();
         }
+        if(userInfoDto == null){
+            return ResponseEntity.badRequest().body(null);
+        }
+        return ResponseEntity.ok().body(userInfoDto);
     }
 
     private JsonElement getJsonElement(HttpURLConnection conn) throws IOException {
@@ -127,8 +118,32 @@ public class AuthService {
         return JsonParser.parseString(result);
     }
 
-    public ResponseEntity<Long> signIn(SignInRequestDTO signInRequestDTO) {
-        //닉네임, 이메일 중복있는지 확인한 후에 현재 로그인 중인 User 찾아서 정보 기입
-        return ResponseEntity.ok().body(0L);
+
+    public LoginResponseDto kakaoSignin(String kakaoAccessToken){
+        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken).getBody();
+        if(!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)){ //회원가입 X
+            User user = User.builder()
+                    .email(userInfoDto.getEmail())
+                    .profilePicture(userInfoDto.getProfilePicture())
+                    .socialType(SocialType.KAKAO)
+                    .role(Role.USER)
+                    .build();
+            userRepository.save(user);
+        }
+
+        LoginResponseDto loginResponseDto = LoginResponseDto.builder()
+                .email(userInfoDto.getEmail())
+                .profilePicture(userInfoDto.getProfilePicture())
+                .socialType(SocialType.KAKAO)
+                .build();
+
+        return loginResponseDto;
     }
+
+    public ResponseEntity<Long> kakaoLogin(String kakaoAccessToken){
+        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken).getBody();
+        if(!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)){
+            return ResponseEntity.badRequest().body(0L);
+        }
+
 }

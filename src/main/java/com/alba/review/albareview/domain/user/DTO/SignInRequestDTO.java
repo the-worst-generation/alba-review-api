@@ -1,4 +1,4 @@
-package com.alba.review.albareview.domain.user.dto;
+package com.alba.review.albareview.domain.user.DTO;
 
 import com.alba.review.albareview.domain.user.Sex;
 import com.alba.review.albareview.domain.user.User;
@@ -7,7 +7,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
-import javax.validation.constraints.Pattern;
 import java.time.LocalDate;
 
 @Getter

@@ -1,11 +1,10 @@
-package com.alba.review.albareview.domain.user.dto;
+package com.alba.review.albareview.domain.user.DTO;
 
 import com.alba.review.albareview.domain.user.Sex;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import javax.management.relation.Role;
 import java.time.LocalDate;
 
 @Getter

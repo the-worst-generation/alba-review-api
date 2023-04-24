@@ -24,4 +24,6 @@ public class LoginResponseDto {
 
     private SocialType socialType;
 
+    private boolean loginSuccess;
+
 }

@@ -1,31 +1,30 @@
-package com.alba.review.albareview.config.auth;
+package com.alba.review.albareview.service;
 
 import com.alba.review.albareview.config.auth.DTO.KakaoUserInfoDto;
 import com.alba.review.albareview.config.auth.DTO.LoginResponseDto;
+import com.alba.review.albareview.config.auth.DTO.TokenDto;
 import com.alba.review.albareview.constants.Constants;
 import com.alba.review.albareview.domain.user.*;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.java.Log;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
 
 @RequiredArgsConstructor
 @Service
 public class AuthService {
     private final UserRepository userRepository;
     private final Constants constants;
+    private final SecurityService securityService;
 
-    public ResponseEntity<String> getKakaoToken(String code) throws IOException{ //인가 코드 받아서 token 받아옴
+    public String getKakaoToken(String code) throws IOException{ //인가 코드 받아서 token 받아옴
         String access_Token = "";
         String refresh_Token = "";
         String reqURL = "https://kauth.kakao.com/oauth/token";
@@ -51,7 +50,7 @@ public class AuthService {
             //결과 코드가 200이라면 성공
             int responseCode = conn.getResponseCode();
             if(responseCode != 200){
-                return ResponseEntity.badRequest().body("잘못된 요청입니다.");
+                return "";
             }
             System.out.println("responseCode : " + responseCode);
             System.out.println(sb);
@@ -71,9 +70,9 @@ public class AuthService {
             e.printStackTrace();
         }
 
-        return ResponseEntity.ok().body(access_Token);
+        return access_Token;
     }
-    public ResponseEntity<KakaoUserInfoDto> getKakaoUserInfo(String token) { // -->  토큰으로 회원 정보 가져오기
+    public KakaoUserInfoDto getKakaoUserInfo(String token) { // -->  토큰으로 회원 정보 가져오기
 
         String reqURL = "https://kapi.kakao.com/v2/user/me";
         KakaoUserInfoDto userInfoDto = null;
@@ -100,9 +99,9 @@ public class AuthService {
             e.printStackTrace();
         }
         if(userInfoDto == null){
-            return ResponseEntity.badRequest().body(null);
+            return null;
         }
-        return ResponseEntity.ok().body(userInfoDto);
+        return userInfoDto;
     }
 
     private JsonElement getJsonElement(HttpURLConnection conn) throws IOException {
@@ -119,31 +118,66 @@ public class AuthService {
     }
 
 
-    public LoginResponseDto kakaoSignin(String kakaoAccessToken){
-        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken).getBody();
-        if(!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)){ //회원가입 X
+//    public LoginResponseDto kakaoSignin(String authorizationCode) throws IOException {
+//        String kakaoAccessToken = getKakaoToken(authorizationCode);
+//        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken);
+//        if(!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)){ //회원가입 X
+//            User user = User.builder()
+//                    .email(userInfoDto.getEmail())
+//                    .profilePicture(userInfoDto.getProfilePicture())
+//                    .socialType(SocialType.KAKAO)
+//                    .role(Role.ROLE_USER)
+//                    .build();
+//            userRepository.save(user);
+//        }
+//
+//        LoginResponseDto loginResponseDto = LoginResponseDto.builder()
+//                .email(userInfoDto.getEmail())
+//                .profilePicture(userInfoDto.getProfilePicture())
+//                .socialType(SocialType.KAKAO)
+//                .build();
+//
+//        return loginResponseDto;
+//    }
+
+    //유저가 있다면 jwt를 발급해주자
+    public ResponseEntity<String> kakaoLogin(String authorizationCode) throws IOException {
+        String kakaoAccessToken = getKakaoToken(authorizationCode);
+        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken);
+        //유저가 없다면 저장
+        if (!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)) {
             User user = User.builder()
                     .email(userInfoDto.getEmail())
                     .profilePicture(userInfoDto.getProfilePicture())
                     .socialType(SocialType.KAKAO)
-                    .role(Role.USER)
+                    .role(Role.ROLE_USER)
                     .build();
             userRepository.save(user);
         }
-
-        LoginResponseDto loginResponseDto = LoginResponseDto.builder()
-                .email(userInfoDto.getEmail())
-                .profilePicture(userInfoDto.getProfilePicture())
-                .socialType(SocialType.KAKAO)
-                .build();
-
-        return loginResponseDto;
-    }
-
-    public ResponseEntity<Long> kakaoLogin(String kakaoAccessToken){
-        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken).getBody();
-        if(!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)){
-            return ResponseEntity.badRequest().body(0L);
+        //토큰 발급하기
+        try {
+            TokenDto tokenDto = securityService.login(userInfoDto.getEmail());
+            HttpHeaders headers = setTokenHeaders(tokenDto);
+            return ResponseEntity.ok().headers(headers).body(tokenDto.getAccessToken());
+        }
+        catch (Exception e){
+            return ResponseEntity.badRequest().body("오류");
         }
 
+    }
+
+    public HttpHeaders setTokenHeaders(TokenDto tokenDto) {
+        HttpHeaders headers = new HttpHeaders();
+        ResponseCookie cookie = ResponseCookie.from("RefreshToken", tokenDto.getRefreshToken())
+                .path("/")
+                .maxAge(60*60*24*7) // 쿠키 유효기간 7일로 설정했음
+                .secure(true)
+                .sameSite("None")
+                .httpOnly(true)
+                .build();
+        headers.add("Set-cookie", cookie.toString());
+        headers.add("Authorization", tokenDto.getAccessToken());
+
+        return headers;
+    }
 }

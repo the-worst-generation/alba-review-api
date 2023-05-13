@@ -15,15 +15,10 @@ import java.time.LocalDate;
 public class LoginResponseDto {
     private String email;
     private String profilePicture;
-
     private String nickname;
-
     private Sex sex;
-
     private LocalDate birthDate;
-
     private SocialType socialType;
-
     private boolean loginSuccess;
 
 }

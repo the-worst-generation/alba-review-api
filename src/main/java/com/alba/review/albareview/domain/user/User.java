@@ -1,5 +1,6 @@
 package com.alba.review.albareview.domain.user;
 
+import com.alba.review.albareview.domain.user.DTO.SignInRequestDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -53,9 +54,15 @@ public class User{
     private SocialType socialType;
 
     @CreatedDate
-    private LocalDateTime createDate;
+    private LocalDateTime createdDate;
 
     @LastModifiedDate
     private LocalDateTime modifiedDate;
+
+    public void toEntityCustomData(LocalDate birthDate, String nickname, Sex sex) {
+        this.birthDate = birthDate;
+        this.nickname = nickname;
+        this.sex = sex;
+    }
 
 }

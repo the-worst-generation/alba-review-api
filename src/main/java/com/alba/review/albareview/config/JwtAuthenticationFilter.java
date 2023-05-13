@@ -21,14 +21,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtProvider jwtProvider;
 
-    /*
-
-    실제 필터링 로직이 수행될 전체 메서드 doFilterInternal
-    본 메서드에서는 JWT 토큰의 인증 정보를 현재 쓰레드의 SecurityContext 에 저장하는 역할을 수행
-    authentication > SecurityContext > ContextHolder 인거 알지..? ~
-
-    */
-
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,

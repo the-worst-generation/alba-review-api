@@ -1,10 +1,10 @@
 package com.alba.review.albareview.service;
 
 import com.alba.review.albareview.config.auth.DTO.KakaoUserInfoDto;
-import com.alba.review.albareview.config.auth.DTO.LoginResponseDto;
 import com.alba.review.albareview.config.auth.DTO.TokenDto;
 import com.alba.review.albareview.constants.Constants;
 import com.alba.review.albareview.domain.user.*;
+import com.alba.review.albareview.domain.user.DTO.SignInRequestDTO;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +12,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -118,30 +119,9 @@ public class AuthService {
     }
 
 
-//    public LoginResponseDto kakaoSignin(String authorizationCode) throws IOException {
-//        String kakaoAccessToken = getKakaoToken(authorizationCode);
-//        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken);
-//        if(!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)){ //회원가입 X
-//            User user = User.builder()
-//                    .email(userInfoDto.getEmail())
-//                    .profilePicture(userInfoDto.getProfilePicture())
-//                    .socialType(SocialType.KAKAO)
-//                    .role(Role.ROLE_USER)
-//                    .build();
-//            userRepository.save(user);
-//        }
-//
-//        LoginResponseDto loginResponseDto = LoginResponseDto.builder()
-//                .email(userInfoDto.getEmail())
-//                .profilePicture(userInfoDto.getProfilePicture())
-//                .socialType(SocialType.KAKAO)
-//                .build();
-//
-//        return loginResponseDto;
-//    }
-
     //유저가 있다면 jwt를 발급해주자
-    public ResponseEntity<String> kakaoLogin(String authorizationCode) throws IOException {
+    //인가코드를 기반으로 DB에 저장 -> jwt 헤더에 리턴
+    public ResponseEntity<String> getJwtValue(String authorizationCode) throws IOException {
         String kakaoAccessToken = getKakaoToken(authorizationCode);
         KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken);
         //유저가 없다면 저장
@@ -158,7 +138,8 @@ public class AuthService {
         try {
             TokenDto tokenDto = securityService.login(userInfoDto.getEmail());
             HttpHeaders headers = setTokenHeaders(tokenDto);
-            return ResponseEntity.ok().headers(headers).body(tokenDto.getAccessToken());
+            System.out.println("access: " + tokenDto.getAccessToken());
+            return ResponseEntity.ok().headers(headers).build();
         }
         catch (Exception e){
             return ResponseEntity.badRequest().body("오류");
@@ -179,5 +160,23 @@ public class AuthService {
         headers.add("Authorization", tokenDto.getAccessToken());
 
         return headers;
+    }
+
+    public boolean checkNickNameDuplicate(String username){
+        return userRepository.existsByNickname(username);
+    }
+
+    @Transactional
+    public ResponseEntity<Long> signIn(String requestEmail, SignInRequestDTO signInRequestDTO) {
+        if(!userRepository.findByEmailAndSocialType(requestEmail, SocialType.KAKAO).isPresent()){
+            return ResponseEntity.badRequest().body(-1L);
+        }
+        User user = userRepository.findByEmailAndSocialType(requestEmail, SocialType.KAKAO).get();
+        if(checkNickNameDuplicate(signInRequestDTO.getNickname())){
+            return ResponseEntity.badRequest().body(-1L);
+        }
+        user.toEntityCustomData(signInRequestDTO.getBirthDate(), signInRequestDTO.getNickname(), signInRequestDTO.getSex());
+
+        return ResponseEntity.ok().body(user.getId());
     }
 }

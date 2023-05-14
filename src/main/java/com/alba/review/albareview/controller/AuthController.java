@@ -22,13 +22,14 @@ public class AuthController {
 
     //프론트로부터 인가 코드를 받고 카카오 accessToken을 return
     @GetMapping("/auth/kakao/login/{code}") //인가코드를 기반으로 DB에 저장 -> jwt 리턴
-    public ResponseEntity<String> getJwtValue(@PathVariable String code) throws IOException {
+    public ResponseEntity<String> getJwtValue(@PathVariable String code) {
         return authService.getJwtValue(code);
     }
     @GetMapping("/oauth/test")
     public String test(){
         return "test";
     }
+
     @PostMapping("/auth/signIn")
     public ResponseEntity<Long> signIn(@RequestBody SignInRequestDTO signInRequestDTO, Principal principal){
         return authService.signIn(principal.getName(),signInRequestDTO);

@@ -1,6 +1,6 @@
 package com.alba.review.albareview.service;
 
-import com.alba.review.albareview.config.auth.DTO.KakaoUserInfoDto;
+import com.alba.review.albareview.domain.user.DTO.KakaoUserInfoDto;
 import com.alba.review.albareview.config.auth.DTO.TokenDto;
 import com.alba.review.albareview.constants.Constants;
 import com.alba.review.albareview.domain.user.*;
@@ -8,23 +8,14 @@ import com.alba.review.albareview.domain.user.DTO.SignInRequestDTO;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.util.UriComponentsBuilder;
-import reactor.core.publisher.Mono;
-
-import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 
 @RequiredArgsConstructor
 @Service
@@ -69,34 +60,6 @@ public class AuthService {
         return userInfoDto;
     }
 
-    //유저가 있다면 jwt를 발급해주자
-    //인가코드를 기반으로 DB에 저장 -> jwt 헤더에 리턴
-    public ResponseEntity<String> getJwtValue(String authorizationCode) {
-        String kakaoAccessToken = getKakaoToken(authorizationCode);
-        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken);
-        //유저가 없다면 저장
-        if (!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)) {
-            User user = User.builder()
-                    .email(userInfoDto.getEmail())
-                    .profilePicture(userInfoDto.getProfilePicture())
-                    .socialType(SocialType.KAKAO)
-                    .role(Role.ROLE_USER)
-                    .build();
-            userRepository.save(user);
-        }
-        //토큰 발급하기
-        try {
-            TokenDto tokenDto = securityService.login(userInfoDto.getEmail());
-            HttpHeaders headers = setTokenHeaders(tokenDto);
-            System.out.println("access: " + tokenDto.getAccessToken());
-            return ResponseEntity.ok().headers(headers).build();
-        }
-        catch (Exception e){
-            return ResponseEntity.badRequest().body("오류");
-        }
-
-    }
-
     public HttpHeaders setTokenHeaders(TokenDto tokenDto) {
         HttpHeaders headers = new HttpHeaders();
         ResponseCookie cookie = ResponseCookie.from("RefreshToken", tokenDto.getRefreshToken())
@@ -116,17 +79,66 @@ public class AuthService {
         return userRepository.existsByNickname(username);
     }
 
+    //custom signIn 하는 부분
     @Transactional
-    public ResponseEntity<Long> signIn(String requestEmail, SignInRequestDTO signInRequestDTO) {
-        if(!userRepository.findByEmailAndSocialType(requestEmail, SocialType.KAKAO).isPresent()){
-            return ResponseEntity.badRequest().body(-1L);
+    public ResponseEntity<String> customSignIn(String requestEmail, SignInRequestDTO signInRequestDTO) {
+        if(!userRepository.findByEmailAndSocialType(requestEmail, signInRequestDTO.getSocialType()).isPresent()){
+            return ResponseEntity.badRequest().body(requestEmail+"의 email은 회원가입이 되지 않았습니다.");
         }
-        User user = userRepository.findByEmailAndSocialType(requestEmail, SocialType.KAKAO).get();
         if(checkNickNameDuplicate(signInRequestDTO.getNickname())){
-            return ResponseEntity.badRequest().body(-1L);
+            return ResponseEntity.badRequest().body(signInRequestDTO.getNickname()+ "의 닉네임은 이미 존재합니다.");
         }
+        UserEntity user = userRepository.findByEmailAndSocialType(requestEmail, SocialType.KAKAO).get();
         user.toEntityCustomData(signInRequestDTO.getBirthDate(), signInRequestDTO.getNickname(), signInRequestDTO.getSex());
 
-        return ResponseEntity.ok().body(user.getId());
+        return ResponseEntity.ok().body(String.valueOf(user.getId()));
+    }
+
+    public ResponseEntity<String> kakaoSignIn(String code) { //email 우리 DB에 없으면 저장 하고 있으면 nickname check
+        String kakaoAccessToken = getKakaoToken(code);
+        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken);
+        //유저가 없다면 저장
+        if (!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)) {
+            UserEntity user = UserEntity.builder()
+                    .email(userInfoDto.getEmail())
+                    .profilePicture(userInfoDto.getProfilePicture())
+                    .socialType(SocialType.KAKAO)
+                    .role(Role.ROLE_USER)
+                    .build();
+            userRepository.save(user);
+        }
+        if(userRepository.findByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO).get().getNickname() != null){
+            return ResponseEntity.badRequest().body("이미 회원가입 되어 있는 user입니다.");
+        }
+        //토큰 발급하기
+        try {
+            TokenDto tokenDto = securityService.login(userInfoDto.getEmail());
+            HttpHeaders headers = setTokenHeaders(tokenDto);
+            return ResponseEntity.ok().headers(headers).build();
+        }
+        catch (Exception e){
+            return ResponseEntity.badRequest().body("token 발급시에 오류 발생. 서버 문의 바랍니다.");
+        }
+    }
+
+    public ResponseEntity<String> kakaoLogIn(String code) {
+        String kakaoAccessToken = getKakaoToken(code);
+        KakaoUserInfoDto userInfoDto = getKakaoUserInfo(kakaoAccessToken);
+        //유저가 없으면
+        if (!userRepository.existsByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO)) {
+            return ResponseEntity.badRequest().body("회원가입 되지 않은 user입니다.");
+        }
+        if(userRepository.findByEmailAndSocialType(userInfoDto.getEmail(), SocialType.KAKAO).get().getNickname() == null){
+            return ResponseEntity.badRequest().body("custom 회원가입이 되어 있지않습니다.");
+        }
+        //토큰 발급하기
+        try {
+            TokenDto tokenDto = securityService.login(userInfoDto.getEmail());
+            HttpHeaders headers = setTokenHeaders(tokenDto);
+            return ResponseEntity.ok().headers(headers).build();
+        }
+        catch (Exception e){
+            return ResponseEntity.badRequest().body("token 발급시에 오류 발생. 서버 문의 바랍니다.");
+        }
     }
 }

@@ -9,7 +9,7 @@ import java.util.Collection;
 
 @Data
 public class CustomUserDetails implements UserDetails {
-    private User user;
+    private UserEntity user;
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         Collection<GrantedAuthority> collection = new ArrayList<>();

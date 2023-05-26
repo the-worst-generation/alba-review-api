@@ -1,6 +1,5 @@
 package com.alba.review.albareview.domain.user;
 
-import com.alba.review.albareview.domain.user.DTO.SignInRequestDTO;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,58 +7,61 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.annotation.security.DenyAll;
 import javax.persistence.*;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
+import javax.validation.constraints.NotNull;
+import java.sql.Timestamp;
 
 @Getter
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Entity
 @EntityListeners(AuditingEntityListener.class)
-public class User{
+public class UserEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @NotNull
+    @Column(name = "id")
     private long id;
 
-    @Column(nullable = false, name = "email")
+    @NotNull
+    @Column(name = "email", unique = true, length = 50)
     private String email;
 
-    @Column(nullable = false, name = "profile_picture")
+    @NotNull
+    @Column(name = "profile_picture", length = 100)
     private String profilePicture;
 
+    @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, name = "role")
+    @Column(name = "social_type", length = 15)
+    private SocialType socialType;
+
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", length = 10)
     private Role role;
 
-    @Column(name = "nickname")
+    @Column(name = "nickname", unique = true, length = 20)
     private String nickname;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "sex")
+    @Column(name = "sex", length = 2)
     private Sex sex;
 
     @Column(name = "birth_date")
-    private LocalDate birthDate;
-
-    @Enumerated(EnumType.STRING)
-    @Column(name = "social_type")
-    private SocialType socialType;
+    private Timestamp birthDate;
 
     @CreatedDate
-    private LocalDateTime createdDate;
+    @Column(name = "created_at")
+    private Timestamp createdDate;
 
     @LastModifiedDate
-    private LocalDateTime modifiedDate;
+    @Column(name = "updated_at")
+    private Timestamp modifiedDate;
 
-    public void toEntityCustomData(LocalDate birthDate, String nickname, Sex sex) {
+    public void toEntityCustomData(Timestamp birthDate, String nickname, Sex sex) {
         this.birthDate = birthDate;
         this.nickname = nickname;
         this.sex = sex;

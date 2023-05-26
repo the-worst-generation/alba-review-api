@@ -1,4 +1,4 @@
-package com.alba.review.albareview.config.auth.DTO;
+package com.alba.review.albareview.domain.user.DTO;
 
 import com.alba.review.albareview.domain.user.Role;
 import lombok.AllArgsConstructor;
